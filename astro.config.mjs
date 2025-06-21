@@ -2,8 +2,8 @@ import { defineConfig } from "astro/config";
 import tailwind from "@astrojs/tailwind";
 import react from "@astrojs/react";
 
-import vercel from "@astrojs/vercel/serverless";
 import path from "path";
+import vercelServerless from "@astrojs/vercel/serverless";
 
 // https://astro.build/config
 export default defineConfig({
@@ -12,7 +12,7 @@ export default defineConfig({
     checkOrigin: true,
   },
   output: "server",
-  adapter: vercel({
+  adapter: vercelServerless({
     webAnalytics: { enabled: true },
   }),
   vite: {

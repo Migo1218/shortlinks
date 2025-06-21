@@ -24,11 +24,11 @@ const LinkSchema = new mongoose.Schema(
       default: 0,
     },
     user: {
-      type: String
+      type: String,
     },
     qr: {
       type: String,
-    }
+    },
   },
   {
     timestamps: true,
