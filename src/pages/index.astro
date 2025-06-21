@@ -1,0 +1,27 @@
+---
+import Content from "../components/Content.astro";
+import Header from "../components/Header.astro";
+import Layout from "../layout/Layout.astro";
+import Form from "../components/Form.astro";
+import { Table } from "../components/Table.tsx";
+import { PopUp } from "../components/ui/PopUp";
+const data = Astro.locals;
+---
+
+<Layout title="ShortiLink">
+  <Header />
+  <main
+    class="flex flex-col items-center max-w-xl mx-auto justify-center h-[calc(100vh-80px)]"
+  >
+    <Content />
+    <Form />
+
+    {
+      data?.session && (
+        <Table client:load />
+      ) 
+    }
+  </main>
+
+  <PopUp client:load />
+</Layout>

@@ -1,0 +1,52 @@
+---
+
+---
+
+<form class="w-full mt-12" id="formt-short-link">
+  <label class="w-full text-sm mb-2 inline-block">Your long Url</label>
+
+  <div class="flex gap-2 w-full flex-col sm:flex-row">
+    <input
+      type="text"
+      placeholder="https://www.behance.net/gallery/161798075/Shorty-URL-Shortener-Using-Vue-Laravel?tracking_source=search_projects|url+shortener+web+design&l=5"
+      class="bg-[#374150] w-full px-3 py-4 rounded-md text-sm border-none focus:outline-none"
+    />
+    <button
+      class="bg-[#F87700] px-4 py-3 rounded-md text-white whitespace-nowrap"
+      type="submit">Shorten URL</button
+    >
+  </div>
+</form>
+
+<script>
+  import { modalStore } from "../store/modalStore.js";
+  import { tableStore } from "../store/tableStore.js";
+
+  const form = document.querySelector("#formt-short-link");
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const input = form.querySelector("input");
+    const url = input.value;
+
+    const res = await fetch("/api/short", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ url }),
+    });
+
+    const json = await res.json();
+
+    modalStore.set({
+      isOpen: true,
+      data: json,
+    });
+
+    tableStore.set({
+      data: [...tableStore.get().data, json.link],
+    });
+
+    input.value = "";
+  });
+</script>

@@ -1,0 +1,122 @@
+import type { APIContext } from "astro";
+import { Link } from "../../db/adapter";
+import QRCode from "qrcode-svg";
+import sharp from "sharp";
+import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+
+const logoSVG = `
+<svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+<circle cx="20" cy="20" r="20" fill="white"/>
+<path d="M11.5185 13.4519L5 20.0567L11.5181 26.6609C12.1128 27.2634 13.077 27.2634 13.6716 26.6616C14.2666 26.0594 14.2669 25.0831 13.6723 24.4806L9.53985 20.2955L8.29279 21.0832L13.6726 15.6321C13.9699 15.331 14.1182 14.9367 14.1182 14.542C14.1182 14.1473 13.9692 13.7523 13.6719 13.4512C13.0773 12.8493 12.1131 12.8497 11.5185 13.4519Z" fill="black"/>
+<path d="M28.4814 13.4521L34.9999 20.0566L28.4818 26.6608C27.8872 27.2633 26.923 27.2633 26.3283 26.6615C25.7334 26.0593 25.733 25.0831 26.3277 24.4805L30.4601 20.2958L31.7071 21.0835L26.327 15.6324C26.0297 15.3313 25.8813 14.937 25.8813 14.5423C25.8813 14.1476 26.0303 13.7525 26.3277 13.4514C26.9226 12.8492 27.8868 12.8496 28.4814 13.4521Z" fill="black"/>
+<path d="M23.6028 13.9838C23.4587 13.6163 23.1758 13.3031 22.7887 13.1317C22.0148 12.7887 21.1173 13.1414 20.7842 13.9191L16.0286 24.9519C15.8621 25.3408 15.8679 25.7623 16.0121 26.1295C16.1563 26.497 16.4392 26.8101 16.8263 26.9815C17.6002 27.3246 18.4976 26.9719 18.8307 26.1942L23.5863 15.1613C23.7529 14.7725 23.747 14.3509 23.6028 13.9838Z" fill="black"/>
+</svg>
+`;
+
+export async function POST(context: APIContext) {
+  const S3 = new S3Client({
+    region: "auto",
+    endpoint: import.meta.env.URL_BUCKET,
+    credentials: {
+      accessKeyId: import.meta.env.ACCES_KEY_ID,
+      secretAccessKey: import.meta.env.SECRET_ACCESS_KEY,
+    },
+  });
+
+  const locals = context.locals;
+  const body = await context.request.json();
+  const short_id = Math.random().toString(36).substring(2, 8);
+
+  const qrCode = generateQRCode(`https://www.shortilink.com/${short_id}`);
+  const imagePng = await insertImage(qrCode);
+
+  const request = new PutObjectCommand({
+    Bucket: "shortilink",
+    Key: short_id,
+    Body: imagePng,
+    ContentType: "image/png",
+  });
+
+  await S3.send(request);
+
+  const urlImage = `https://snippetpix.dev/shortilink%2F${short_id}`;
+
+  const link = await Link.create({
+    url: body.url,
+    short_id,
+    user: locals.session?.userId,
+    qr: urlImage,
+  });
+
+  return new Response(
+    JSON.stringify({
+      link,
+    }),
+    {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    }
+  );
+}
+
+export async function GET(context: APIContext) {
+  const locals = context.locals;
+  const userId = locals.session?.userId;
+
+  const links = await Link.find({
+    user: userId,
+  });
+
+  return new Response(JSON.stringify(links), {
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+}
+
+export async function DELETE(context: APIContext) {
+  const locals = context.locals;
+  const userId = locals.session?.userId;
+  const requestBody = await context.request.json();
+  const short_id = requestBody.short_id;
+
+  await Link.deleteOne({
+    user: userId,
+    short_id,
+  });
+
+  return new Response(null, {
+    status: 204,
+  });
+
+}
+
+const generateQRCode = (url) => {
+  const qrCode = new QRCode({
+    content: url,
+    padding: 4,
+    width: 256,
+    height: 256,
+    color: "#000000",
+    background: "#ffffff",
+    ecl: "H",
+  });
+
+  let svg = qrCode.svg();
+  return svg;
+};
+
+const insertImage = async (svg) => {
+  const quePng = await sharp(Buffer.from(svg)).png().toBuffer();
+
+  const logoBuffer = Buffer.from(logoSVG);
+  const logoPng = await sharp(logoBuffer).png().resize(50, 50).toBuffer();
+  
+  const combinedImage = await sharp(quePng)
+    .composite([{ input: logoPng, gravity: "center" }])
+    .png()
+    .toBuffer();
+
+  return combinedImage;
+};

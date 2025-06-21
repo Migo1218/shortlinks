@@ -1,0 +1,31 @@
+---
+import Logo from "./icons/Logo.astro";
+import LogoutButton from "./ui/LogoutButton.astro";
+const data = Astro.locals;
+---
+
+<header class="h-20 flex items-center justify-between">
+  <a class="flex items-center gap-2" href="/">
+    <Logo />
+    <span class="hidden min-[400px]:block">ShortiLink</span>
+  </a>
+  {
+    data?.session ? (
+      <div class="flex items-center gap-3 ">
+        <span class="hidden min-[400px]:block">
+          Hi, <strong class="text-[#009DFE]">{data.user.username}</strong>
+        </span>
+        <LogoutButton />
+      </div>
+    ) : (
+      <div class="flex items-center gap-3">
+        <a href="/auth/login" class="bg-[#F87700] px-5 py-1 rounded-md">
+          Login
+        </a>
+        <a href="/auth/signup" class="border border-1 rounded-md px-5 py-1">
+          Register
+        </a>
+      </div>
+    )
+  }
+</header>

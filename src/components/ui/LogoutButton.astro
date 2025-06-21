@@ -1,0 +1,21 @@
+<button id="logout" class="border border-1 rounded-md px-5 py-1">
+  Logout
+</button>
+
+<script>
+  const logout = document.getElementById("logout");
+
+  if (logout) {
+    logout.addEventListener("click", async () => {
+      await fetch("/api/auth/logout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      window.location.href = "/";
+    });
+  }
+
+</script>
