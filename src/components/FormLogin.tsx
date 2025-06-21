@@ -37,7 +37,7 @@ export const FormLogin = () => {
     <form className="mt-10" onSubmit={formik.handleSubmit}>
       <Input
         label="Email"
-        placeholder="example@example.com"
+        placeholder="example@email.com"
         name="email"
         type="text"
         value={formik.values.email}
